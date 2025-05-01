@@ -1,6 +1,8 @@
 # alobot_esp32_lite
 
-The source code is the firmware of AloBot.
+The source code is lite version of the firmware of AloBot.
+It's provided as sample code to make other devices to be alobot compatible.
+Therefore alopexcamera app could be deployed on the device as well.
 
 Note that the MCU of AloBot is "ESP32 C3" and Arduino Version is "2.3.2"
 
