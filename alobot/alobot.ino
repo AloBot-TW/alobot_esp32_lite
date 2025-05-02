@@ -7,52 +7,23 @@
 #include <arduino-timer.h>
 
 #include "drive.h"
-#include "tof.h"
-#include "ring.h"
-#include "usled.h"
 
-const String fw_version = "1.00";
+const String fw_version = "0.00";
 
 auto timer = timer_create_default();
 
 Drive drive;
-ToF tof;
-Ring ring;
-UsLed usLed;
 
 bool stop = false;
 bool forward = false;
-bool obstacleAvoid = true;
 
 uint seqNo = 0;
-int dist = -1;
-
-bool tofOn = false;
-bool byPassDS = false;
-
-void procDist() {
-  if (tofOn) {
-      if (dist != -1)
-        stop = (dist < 200);
-  }
-
-  ring.onDist(stop);
-
-  if (!obstacleAvoid)
-    stop = false;
-
-  if (stop&&forward)
-    drive.brake(0);
-
-}
 
 static unsigned long startTime = 0;
 
 bool motor_timer(void *) {
 
   unsigned long mTime = millis();
-
-  //Serial.printf("motor_timer %ul\n", mTime - startTime);
 
   startTime = mTime;
 
@@ -146,14 +117,6 @@ class MyCallbacks: public BLECharacteristicCallbacks {
 
             drive.startRotation(l, r, d, b);
           }
-        } else if (receive_data.startsWith("OA")) {
-          int nDS = receive_data.length() - 2;
-          if (nDS == 1) {
-            int on = receive_data[2];
-            obstacleAvoid = on;
-            Serial.print("OA: ");
-            Serial.println(on);
-          }
         } else if (receive_data.startsWith("VS")) {
           char buf[MAX_MSG_SZ];
           sprintf(buf, "V%s", fw_version);
@@ -209,72 +172,22 @@ void setup() {
 
   initBle();
 
-  ring.init();
-
-  tofOn = tof.init();
-
-  //try
-  //tofOn = false;
-
-  if (tofOn)
-    Serial.println("Sucessful to boot VL53L0X");
-  else
-    Serial.println("Failed to detect and initialize sensor!");
-
   timer.every(10, motor_timer);
-}
-
-void procUsLed() {
-  stop = usLed.onLoop();
-  if (!obstacleAvoid)
-    stop = false;
 }
 
 void loop() {
 
-    if (!deviceConnected && oldDeviceConnected) {
-
-        delay(100); // give the bluetooth stack the chance to get things ready
-
-        BLEDevice::startAdvertising(); // restart advertising
-
-        oldDeviceConnected = deviceConnected;
-
-        if (tofOn)
-          tof.stop();
-    }
-
-    // connecting
-    if (deviceConnected && !oldDeviceConnected) {
-
-    // do stuff here on connecting
-        oldDeviceConnected = deviceConnected;
-
-        if (tofOn)
-          tof.start();
-
-        obstacleAvoid = true;
-    }
-
-  if (tofOn) {
-    if (tof.conOn) {
-      dist = tof.getDist();
-      char buf[MAX_MSG_SZ];
-      if (dist >= 10000)
-        dist = 9999;
-      sprintf(buf, "D%04d", dist);
-      //Serial.println(buf);
-      bleSend(buf);
-    }
+  if (!deviceConnected && oldDeviceConnected) {
+      delay(100); // give the bluetooth stack the chance to get things ready
+      BLEDevice::startAdvertising(); // restart advertising
+      oldDeviceConnected = deviceConnected;
   }
 
-  if (tofOn) {
-     if (!tof.conOn)
-        ring.rainbow(20);
-     else
-        procDist();
-  } else
-     procUsLed();
+  // connecting
+  if (deviceConnected && !oldDeviceConnected) {
+      // do stuff here on connecting
+      oldDeviceConnected = deviceConnected;   
+  } 
 
   timer.tick();
 

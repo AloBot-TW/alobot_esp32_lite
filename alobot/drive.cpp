@@ -73,12 +73,7 @@ void Drive::rotation() {
 
   motorL.drive(ro_speed_l);
   motorR.drive(ro_speed_r);
-/*
-  Serial.print("ro_speed_l: ");
-  Serial.println(ro_speed_l);
-  Serial.print("ro_speed_r: ");
-  Serial.println(ro_speed_r);
-*/
+
   ro_speed_l = updateRoSpeed(ro_speed_l);
   ro_speed_r = updateRoSpeed(ro_speed_r);
 }
